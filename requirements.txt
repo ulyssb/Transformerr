@@ -1,0 +1,10 @@
+torch==2.14.0
+datasets==5.0.1
+tokenizers==0.23.2
+scikit-learn==1.9.1
+tqdm==4.70.1
+pytest==9.1.1
+
+# notebooks
+ipykernel
+matplotlib

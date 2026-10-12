@@ -4,6 +4,16 @@ Small GPT-style transformer LM written from scratch in PyTorch, trained on [Tiny
 
 Work in progress: attention isn't implemented yet, so nothing has been trained.
 
+## Pipeline
+
+```
+data.py -> tokenizer.py -> model.py -> train.py -> evaluate.py
+                                          \
+                                           -> generate.py
+```
+
+`baseline.py` uses the same data and tokenizer, for comparison.
+
 ## Files
 
 - `src/data.py`: loads TinyStories (10k train, 1k val, 1k test)
