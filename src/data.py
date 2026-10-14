@@ -47,16 +47,17 @@ def load_story_splits(
         split=f"validation[:{evaluation_size}]",
     )
 
+    # skip stories that are empty after cleaning
     train_stories = [
-        clean_story(example["text"])
+        story
         for example in train_dataset
-        if clean_story(example["text"])
+        if (story := clean_story(example["text"]))
     ]
 
     evaluation_stories = [
-        clean_story(example["text"])
+        story
         for example in evaluation_dataset
-        if clean_story(example["text"])
+        if (story := clean_story(example["text"]))
     ]
 
     validation_stories, test_stories = train_test_split(
