@@ -1,6 +1,32 @@
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 
+# Some TinyStories texts have punctuation that was UTF-8 encoded, decoded as
+# Windows-1252 and saved again, e.g. “ -> â€œ. ” lost its last byte on the way
+# (0x9d isn't a cp1252 character), so it's a bare â€ and can't be decoded back.
+# Everything maps to ASCII, which is what the clean stories use.
+# Order matters: the bare â€ has to come last.
+MOJIBAKE_FIXES = [
+    ("â€œ", '"'),  # “
+    ("â€™", "'"),  # ’
+    ("â€˜", "'"),  # ‘
+    ("â€“", "-"),  # –
+    ("â€”", "-"),  # —
+    ("â€¦", "..."),  # …
+    ("â€Š", ""),  # hair space
+    ("â€", '"'),  # ”
+]
+
+
+def fix_mojibake(text: str) -> str:
+    for broken, fixed in MOJIBAKE_FIXES:
+        text = text.replace(broken, fixed)
+    return text
+
+
+def clean_story(text: str) -> str:
+    return fix_mojibake(text).strip()
+
 
 def load_story_splits(
     train_size: int = 10_000,
@@ -22,15 +48,15 @@ def load_story_splits(
     )
 
     train_stories = [
-        example["text"].strip()
+        clean_story(example["text"])
         for example in train_dataset
-        if example["text"].strip()
+        if clean_story(example["text"])
     ]
 
     evaluation_stories = [
-        example["text"].strip()
+        clean_story(example["text"])
         for example in evaluation_dataset
-        if example["text"].strip()
+        if clean_story(example["text"])
     ]
 
     validation_stories, test_stories = train_test_split(

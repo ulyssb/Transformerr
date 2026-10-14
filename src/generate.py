@@ -5,6 +5,7 @@ from src.model import DEFAULT_CHECKPOINT_PATH, TransformerLM, get_device, load_c
 from src.tokenizer import DEFAULT_SAVE_PATH, EOS_ID, load_tokenizer
 
 
+
 @torch.no_grad()
 def generate(
     model: TransformerLM,
@@ -14,6 +15,10 @@ def generate(
     temperature: float = 1.0,
     top_k: int | None = 50,
 ) -> str:
+    """Returns Generated text."""  
+    # Currently uses top k sampling - consider changing to top nucleus.
+    # Also implement KV caching.
+    
     model.eval()
     device = next(model.parameters()).device
 
@@ -25,7 +30,7 @@ def generate(
     for _ in range(max_new_tokens):
         context = input_ids[:, -model.config.max_length :]
         logits = model(context)  # (1, seq_len, vocab_size)
-        next_logits = logits[0, -1] / temperature  # (vocab_size,)
+        next_logits = logits[0, -1] / temperature  # (vocab_size)
 
         if top_k is not None:
             top_values, top_indices = torch.topk(next_logits, top_k)
@@ -34,7 +39,7 @@ def generate(
         else:
             probs = F.softmax(next_logits, dim=-1)
 
-        next_id = torch.multinomial(probs, num_samples=1)  # (1,)
+        next_id = torch.multinomial(probs, num_samples=1)  # Does the sampling
         input_ids = torch.cat([input_ids, next_id.unsqueeze(0)], dim=1)
 
         if next_id.item() == EOS_ID:
