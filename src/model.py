@@ -146,6 +146,7 @@ class TransformerLM(nn.Module):
         x = self.token_embedding(input_ids)
         x = self.position_encoding(x)
 
+        # packed blocks can attend across stories; a per-story document mask is a possible experiment
         mask = causal_mask(seq_len, device)[None, None, :, :]
         if attention_mask is not None:
             # don't attend to padding keys

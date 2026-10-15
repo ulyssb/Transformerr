@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 
 from src.model import DEFAULT_CHECKPOINT_PATH, TransformerLM, get_device, load_checkpoint
-from src.tokenizer import DEFAULT_SAVE_PATH, IGNORE_INDEX, encode_batch, load_tokenizer
+from src.tokenizer import DEFAULT_SAVE_PATH, load_tokenizer, pack_texts
 
 
 @torch.no_grad()
@@ -18,30 +18,23 @@ def evaluate(
     device = device or next(model.parameters()).device
     model.eval()
 
+    blocks = pack_texts(tokenizer, texts, model.config.max_length)  # (n_blocks, max_length)
     total_loss = 0.0
-    total_tokens = 0
 
-    for start in range(0, len(texts), batch_size):
-        batch = encode_batch(tokenizer, texts[start : start + batch_size])
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+    for start in range(0, len(blocks), batch_size):
+        input_ids = blocks[start : start + batch_size].to(device)
 
-        logits = model(input_ids, attention_mask)  # (batch, seq_len, vocab)
+        logits = model(input_ids)  # (batch, seq_len, vocab)
 
         # sum, then divide by total token count at the end
         loss = F.cross_entropy(
             logits.view(-1, logits.size(-1)),
-            labels.view(-1),
-            ignore_index=IGNORE_INDEX,
+            input_ids.view(-1),
             reduction="sum",
         )
-        n_real_tokens = (labels != IGNORE_INDEX).sum().item()
-
         total_loss += loss.item()
-        total_tokens += n_real_tokens
 
-    avg_loss = total_loss / total_tokens
+    avg_loss = total_loss / blocks.numel()
     return {"loss": avg_loss, "perplexity": math.exp(avg_loss)}
 
 
@@ -51,7 +44,7 @@ if __name__ == "__main__":
     _train_stories, _validation_stories, test_stories = load_story_splits()
 
     device = get_device()
-    tokenizer = load_tokenizer(DEFAULT_SAVE_PATH, max_length=128)
+    tokenizer = load_tokenizer(DEFAULT_SAVE_PATH)
     model = load_checkpoint(DEFAULT_CHECKPOINT_PATH, device=device)
 
     metrics = evaluate(model, tokenizer, test_stories, device=device)

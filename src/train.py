@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.config import ModelConfig
@@ -14,25 +14,7 @@ from src.model import (
     get_device,
     save_checkpoint,
 )
-from src.tokenizer import DEFAULT_SAVE_PATH, IGNORE_INDEX, encode_batch, load_tokenizer
-
-
-class StoryDataset(Dataset):
-    def __init__(self, texts: list[str]):
-        self.texts = texts
-
-    def __len__(self) -> int:
-        return len(self.texts)
-
-    def __getitem__(self, idx: int) -> str:
-        return self.texts[idx]
-
-
-def make_collate_fn(tokenizer):
-    def collate(batch: list[str]) -> dict[str, torch.Tensor]:
-        return encode_batch(tokenizer, batch)
-
-    return collate
+from src.tokenizer import DEFAULT_SAVE_PATH, load_tokenizer, pack_texts
 
 
 def train(
@@ -49,12 +31,9 @@ def train(
     device = device or get_device()
     model = model.to(device)
 
-    train_loader = DataLoader(
-        StoryDataset(train_texts),
-        batch_size=batch_size,
-        shuffle=True,
-        collate_fn=make_collate_fn(tokenizer),
-    )
+    # a tensor works as a dataset: indexing gives one block, batches get stacked
+    train_blocks = pack_texts(tokenizer, train_texts, model.config.max_length)
+    train_loader = DataLoader(train_blocks, batch_size=batch_size, shuffle=True)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     best_val_loss = float("inf")
@@ -66,15 +45,12 @@ def train(
 
         progress = tqdm(train_loader, desc=f"epoch {epoch}/{epochs}")
         for batch in progress:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            input_ids = batch.to(device)  # (batch, max_length), no padding
 
-            logits = model(input_ids, attention_mask)
+            logits = model(input_ids)
             loss = F.cross_entropy(
                 logits.view(-1, logits.size(-1)),
-                labels.view(-1),
-                ignore_index=IGNORE_INDEX,
+                input_ids.view(-1),
             )
 
             optimizer.zero_grad()
@@ -103,8 +79,8 @@ def train(
 if __name__ == "__main__":
     train_stories, validation_stories, _test_stories = load_story_splits()
 
-    tokenizer = load_tokenizer(DEFAULT_SAVE_PATH, max_length=128)
-    config = ModelConfig(vocab_size=tokenizer.get_vocab_size(), max_length=128)
+    tokenizer = load_tokenizer(DEFAULT_SAVE_PATH)
+    config = ModelConfig(vocab_size=tokenizer.get_vocab_size())
     model = TransformerLM(config)
 
     train(model, tokenizer, train_stories, validation_stories)

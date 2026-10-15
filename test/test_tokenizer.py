@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import torch
 
 from src.tokenizer import (
@@ -9,6 +10,7 @@ from src.tokenizer import (
     PAD_ID,
     encode_batch,
     load_tokenizer,
+    pack_texts,
     train_tokenizer,
 )
 
@@ -72,3 +74,28 @@ def test_encode_batch_shapes_and_labels(tmp_path: Path) -> None:
     is_pad = batch["attention_mask"] == 0
     assert torch.all(batch["labels"][is_pad] == IGNORE_INDEX)
     assert torch.all(batch["labels"][~is_pad] == batch["input_ids"][~is_pad])
+
+
+def test_pack_texts_concatenates_and_cuts_into_blocks(tmp_path: Path) -> None:
+    save_path = tmp_path / "tokenizer.json"
+    train_tokenizer(CORPUS, vocab_size=300, save_path=save_path)
+    tokenizer = load_tokenizer(save_path)
+
+    stream = [i for text in CORPUS for i in tokenizer.encode(text).ids]
+    blocks = pack_texts(tokenizer, CORPUS, block_size=16)
+
+    assert blocks.shape == (len(stream) // 16, 16)
+    assert blocks.dtype == torch.long
+    # blocks are the stream, in order, with the short tail dropped
+    assert blocks.view(-1).tolist() == stream[: blocks.numel()]
+    # stories are separated by <eos> <bos>, never padded
+    assert PAD_ID not in blocks
+
+
+def test_pack_texts_rejects_padding_tokenizer(tmp_path: Path) -> None:
+    save_path = tmp_path / "tokenizer.json"
+    train_tokenizer(CORPUS, vocab_size=300, save_path=save_path)
+    tokenizer = load_tokenizer(save_path, max_length=16)
+
+    with pytest.raises(ValueError):
+        pack_texts(tokenizer, CORPUS, block_size=16)
