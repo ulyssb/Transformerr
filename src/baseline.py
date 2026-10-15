@@ -1,8 +1,9 @@
 import math
 from collections import Counter, defaultdict
 
+from src.config import ModelConfig
 from src.data import load_story_splits
-from src.tokenizer import DEFAULT_SAVE_PATH, load_tokenizer
+from src.tokenizer import DEFAULT_SAVE_PATH, load_tokenizer, pack_texts
 
 
 class BigramLanguageModel:
@@ -38,8 +39,10 @@ if __name__ == "__main__":
     train_stories, _validation_stories, test_stories = load_story_splits()
     tokenizer = load_tokenizer(DEFAULT_SAVE_PATH)
 
-    train_ids = [tokenizer.encode(text).ids for text in train_stories]
-    test_ids = [tokenizer.encode(text).ids for text in test_stories]
+    # same packed blocks as the transformer, so the perplexities are comparable
+    block_size = ModelConfig.max_length
+    train_ids = pack_texts(tokenizer, train_stories, block_size).tolist()
+    test_ids = pack_texts(tokenizer, test_stories, block_size).tolist()
 
     model = BigramLanguageModel(vocab_size=tokenizer.get_vocab_size())
     model.fit(train_ids)

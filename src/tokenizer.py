@@ -98,6 +98,22 @@ def encode_batch(tokenizer: Tokenizer, texts: list[str]) -> dict[str, torch.Tens
     }
 
 
+def pack_texts(tokenizer: Tokenizer, texts: list[str], block_size: int) -> torch.Tensor:
+    """Encodes every text as <bos> ... <eos>, concatenates them into one stream
+    and cuts it into (n_blocks, block_size). No padding, and no story gets
+    truncated, but the leftover tail (< block_size tokens) is dropped.
+    Needs padding and truncation disabled (load_tokenizer without max_length)."""
+    if tokenizer.padding is not None or tokenizer.truncation is not None:
+        raise ValueError("pack_texts needs a tokenizer without padding/truncation")
+
+    stream = [token_id for encoding in tokenizer.encode_batch(texts) for token_id in encoding.ids]
+    n_blocks = len(stream) // block_size
+
+    return torch.tensor(stream[: n_blocks * block_size], dtype=torch.long).view(
+        n_blocks, block_size
+    )
+
+
 if __name__ == "__main__":
     train, validation, test = load_story_splits()
 

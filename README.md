@@ -17,7 +17,7 @@ data.py -> tokenizer.py -> model.py -> train.py -> evaluate.py
 ## Files
 
 - `src/data.py`: loads TinyStories (10k train, 1k val, 1k test)
-- `src/tokenizer.py`: byte-level BPE tokenizer, 8k vocab
+- `src/tokenizer.py`: byte-level BPE tokenizer, 8k vocab, plus `pack_texts` (stories joined into one stream, cut into 128-token blocks)
 - `src/baseline.py`: bigram model, for a baseline perplexity
 - `src/model.py`: the transformer (4 layers, d_model 256, 4 heads, context 128)
 - `src/train.py`, `src/evaluate.py`, `src/generate.py`
@@ -52,4 +52,4 @@ Uses CUDA or MPS if available. TinyStories gets downloaded on the first run.
 - shift labels by one in train/evaluate (right now position t is scored on token t, not t+1)
 - train and compare against the bigram baseline
 - tests for `data.py`
-- maybe: lr warmup/decay, dynamic padding, packing stories instead of truncating
+- maybe: lr warmup/decay
