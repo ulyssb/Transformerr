@@ -70,9 +70,24 @@ class MultiHeadSelfAttention(nn.Module):
         self, x: torch.Tensor, mask: torch.Tensor | None = None
     ) -> torch.Tensor:
         # x: (batch, seq_len, d_model), mask: bool, True = masked out
-        # TODO: q/k/v projections, split heads, masked softmax(qk^T / sqrt(d_head)),
-        # dropout, weights @ v, merge heads, out_proj
-        raise NotImplementedError
+
+        batch, seq_len, _ = x.shape
+
+        # (batch, seq_len, d_model) -> (batch, n_heads, seq_len, d_head)
+        Q = self.q_proj(x).view(batch, seq_len, self.n_heads, self.d_head).transpose(1, 2)
+        K = self.k_proj(x).view(batch, seq_len, self.n_heads, self.d_head).transpose(1, 2)
+        V = self.v_proj(x).view(batch, seq_len, self.n_heads, self.d_head).transpose(1, 2)
+
+        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.d_head)  # (batch, n_heads, seq_len, seq_len)
+        if mask is not None:
+            scores = scores.masked_fill(mask, float("-inf"))
+        weights = torch.softmax(scores, dim=-1)
+        weights = self.dropout(weights)
+
+        out = weights @ V  # (batch, n_heads, seq_len, d_head)
+        # merge heads: (batch, n_heads, seq_len, d_head) -> (batch, seq_len, d_model)
+        out = out.transpose(1, 2).contiguous().view(batch, seq_len, self.d_model)
+        return self.out_proj(out)
 
 
 class FeedForward(nn.Module):
