@@ -151,6 +151,12 @@ class TransformerLM(nn.Module):
         # weight tying (Press & Wolf, 2016)
         self.lm_head.weight = self.token_embedding.weight
 
+        # N(0, 1) would give logits with std sqrt(d_model) at init; with std 1/sqrt(d_model)
+        # they start at ~1, and forward() scales the input side back up by sqrt(d_model)
+        nn.init.normal_(self.token_embedding.weight, std=config.d_model**-0.5)
+        with torch.no_grad():
+            self.token_embedding.weight[PAD_ID].zero_()
+
     def forward(
         self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None
     ) -> torch.Tensor:
@@ -158,7 +164,8 @@ class TransformerLM(nn.Module):
         _, seq_len = input_ids.shape
         device = input_ids.device
 
-        x = self.token_embedding(input_ids)
+        # scaled so tokens are on the same scale as the sinusoidal PE (Vaswani et al., 2017)
+        x = self.token_embedding(input_ids) * math.sqrt(self.config.d_model)
         x = self.position_encoding(x)
 
         # packed blocks can attend across stories; a per-story document mask is a possible experiment
