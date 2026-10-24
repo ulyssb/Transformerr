@@ -26,15 +26,17 @@ def evaluate(
 
         logits = model(input_ids)  # (batch, seq_len, vocab)
 
-        # sum, then divide by total token count at the end
+        # position t predicts token t+1; sum, then divide by total prediction count at the end
         loss = F.cross_entropy(
-            logits.view(-1, logits.size(-1)),
-            input_ids.view(-1),
+            logits[:, :-1].reshape(-1, logits.size(-1)),
+            input_ids[:, 1:].reshape(-1),
             reduction="sum",
         )
         total_loss += loss.item()
 
-    avg_loss = total_loss / blocks.numel()
+    # each block of max_length tokens gives max_length - 1 predictions
+    n_blocks, block_size = blocks.shape
+    avg_loss = total_loss / (n_blocks * (block_size - 1))
     return {"loss": avg_loss, "perplexity": math.exp(avg_loss)}
 
 

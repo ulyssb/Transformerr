@@ -48,9 +48,10 @@ def train(
             input_ids = batch.to(device)  # (batch, max_length), no padding
 
             logits = model(input_ids)
+            # position t predicts token t+1: drop the last prediction and the first target
             loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                input_ids.view(-1),
+                logits[:, :-1].reshape(-1, logits.size(-1)),
+                input_ids[:, 1:].reshape(-1),
             )
 
             optimizer.zero_grad()
