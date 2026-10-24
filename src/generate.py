@@ -11,8 +11,8 @@ def generate(
     model: TransformerLM,
     tokenizer,
     prompt: str = "",
-    max_new_tokens: int = 100,
-    temperature: float = 1.0,
+    max_new_tokens: int = 400,
+    temperature: float = 0.8,
     top_k: int | None = 50,
 ) -> str:
     """Returns Generated text."""  
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     tokenizer = load_tokenizer(DEFAULT_SAVE_PATH)  # no fixed padding needed here
     model = load_checkpoint(DEFAULT_CHECKPOINT_PATH, device=device)
 
-    story = generate(model, tokenizer, prompt="Once upon a time")
+    story = generate(model, tokenizer, prompt="A very, very long time ago")
     print(story)

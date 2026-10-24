@@ -29,7 +29,7 @@ def clean_story(text: str) -> str:
 
 
 def load_story_splits(
-    train_size: int = 10_000,
+    train_size: int = 100_000,
     evaluation_size: int = 2_000,
     random_state: int = 42,
 ) -> tuple[list[str], list[str], list[str]]:

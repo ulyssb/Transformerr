@@ -23,7 +23,7 @@ def train(
     train_texts: list[str],
     validation_texts: list[str],
     epochs: int = 3,
-    batch_size: int = 32,
+    batch_size: int = 16,
     lr: float = 3e-4,
     device: torch.device | None = None,
     checkpoint_path: Path | str = DEFAULT_CHECKPOINT_PATH,
