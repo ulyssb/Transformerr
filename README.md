@@ -13,19 +13,25 @@ Trained for 3 epochs on 100k stories (~21M tokens), context 256:
 | bigram baseline (`baseline.py`), same data | 59.85 |
 | transformer | **8.28** |
 
-Sample (`generate.py`, prompt "A very, very long time ago", temperature 0.8, top-k 50):
+Sample `generate.py`, prompt "The sun was out and it was shining.", temperature 0.8, top-k 50:
 
-> A very, very long time ago. The sun was shining and it was so peaceful and peaceful. Little Red knew that it meant to look like new people, so he carefully put on his belt and ran outside. He was glad that the sun could shine brightly.
+> The sun was out and it was shining. Little Tommy loved the sun and the birds. One day, he saw a little bird in the sky. The bird was sad and asked Tommy to come closer.
 >
-> But then, he heard a loud noise. It was a little voice. It was her dad! Dad came outside and hugged him. He said he had done something special. The little yellow bird was sorry.
+> "Let's go see the bird," said Tommy.
 >
-> Little Red was relieved. He promised that his dad would help him feel better soon. He said that if he wanted a shower, he could keep his pocket.
+> The bird was scared and said, "No, it doesn't stay here. We need to be kind and help, and we can watch the bird and the birds. Then we can watch it and see what happens."
 >
-> So Red decided to take off his jacket and go outside to play. He was having so much fun!
+> Tommy nodded and walked towards the bird. The bird flapped its wings and flew away. Little Tommy watched the bird until it flew away.
 >
-> When sunset was over, Jimmy was very sleepy. He yawned and said goodnight to the stars, feeling happy and warm again.
+> Inside, the bird found a big yellow apple in a tree. Tommy and the bird flew around the tree and saw the red apple in the branch. They wanted to eat the apple, but they could not.
+>
+> A man came to the park and saw Tommy playing with the apples and the blue bird. He said, "Hey, you! That is not a good apple. You should not throw it away. You can't throw it away."
+>
+> Tommy and the man looked at the apple and thought, "Okay, sir. Let's go and buy the apples."
+>
+> Tommy took the red apple and went to the man. He reached out his hand and handed it to the man. He said, "Here you go, but be careful. The apple is not for eating. It is good for your snack." Tommy smiled and said, "Thank you, man. You're welcome, mister. I love you."
 
-The story arc and grammar hold up; who's who doesn't ("her dad", a bird out of nowhere, Red turning into Jimmy).
+Grammar and characters hold up (Tommy stays Tommy); the physical logic and who's speaking don't (Tommy flies, the yellow apple turns red, Tommy says both "thank you" and "you're welcome").
 
 ## Pipeline
 
